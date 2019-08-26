@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "bip39.fullname" . }}
+  labels:
+    app: {{ template "bip39.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "bip39.fullname" . }}
+      release: "{{ .Release.Name }}"
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bip39.fullname" . }}
+        release: "{{ .Release.Name }}"
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.container.repository }}:{{ .Values.container.tag }}"
+        imagePullPolicy: {{ .Values.container.pullPolicy }}
+{{- if .Values.container.healthcheck.enabled }}
+{{ toYaml .Values.container.healthcheck.probe | indent 8 }}
+{{- end }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        ports:
+        - containerPort: {{ .Values.container.port }}
+          name: http
+

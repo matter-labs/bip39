@@ -1,0 +1,65 @@
+stages:
+  - build
+  - deploy
+  - destroy
+
+variables:
+  DOCKER_HOST: tcp://localhost:2375/
+  VAULT_ADDR: https://vault.mattr.network
+  DOCKER_DRIVER: overlay2
+  SERVICE_NAME: bip39
+
+.before:
+  deploy: &before-deploy
+    - export KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    - curl -s $VAULT_ADDR/v1/sys/health | jq
+    - "export VAULT_TOKEN=$(curl -s --request POST  --data '{\"jwt\": \"'\"$KUBE_TOKEN\"'\", \"role\": \"k8s\"}'  $VAULT_ADDR/v1/auth/kubernetes/login | jq -r .auth.client_token)"
+    - consul-template -template ".env_template.yaml:.env.yaml" -once
+
+image:build:
+  stage: build
+  image: docker:stable
+
+  services:
+    - docker:18.09.7-dind
+
+  before_script:
+    - echo $CI_JOB_TOKEN | docker login -u 'gitlab-ci-token' $CI_REGISTRY --password-stdin
+
+  script:
+   - docker build -t $CI_JOB_ID:$CI_BUILD_ID --pull .
+   - docker tag $CI_JOB_ID:$CI_BUILD_ID $CI_REGISTRY_IMAGE:latest
+   - docker push $CI_REGISTRY_IMAGE:latest
+
+production:deploy:
+  stage: deploy
+  image: registry.mattr.network/devops/images/mattrstack/gitlab-runner
+  variables:
+    ENVIRONMENT: production
+    K8S_NAMESPACE: gitlab
+    DOMAIN_NAME: bip39.mattr.network
+  environment:
+    name: $ENVIRONMENT
+    url: https://$DOMAIN_NAME
+    on_stop: production:destroy
+  when: manual
+  before_script: *before-deploy
+  script:
+    - helm upgrade $SERVICE_NAME --install --values .env.yaml --namespace $K8S_NAMESPACE --wait ./.k8s
+  only:
+    - master
+
+production:destroy:
+  stage: destroy
+  image: registry.mattr.network/devops/images/mattrstack/gitlab-runner
+  variables:
+    ENVIRONMENT: production
+    K8S_NAMESPACE: gitlab
+  when: manual
+  environment:
+    name: $ENVIRONMENT
+    action: stop
+  script: helm del --purge $SERVICE_NAME
+  only:
+    - master
+

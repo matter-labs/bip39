@@ -1,0 +1,9 @@
+name: bip39
+description: bip39
+version: 0.0.1
+keywords:
+  - bip39
+home:  https://gitlab.mattr.network/matter-labs/bip39.git
+maintainers:
+  - name: Artem Yushkov
+    email: artem.yushkov@gmail.com

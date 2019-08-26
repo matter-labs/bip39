@@ -1,0 +1,29 @@
+{{- if .Values.service.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "bip39.fullname" . }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+{{- if .Values.service.certificate.on_ingress }}
+    certmanager.k8s.io/cluster-issuer: {{ .Values.service.certificate.issuer }}
+{{- end }}
+    # We have wildcard DNS entry like *.review.ambi.rocks
+    # external-dns.alpha.kubernetes.io/hostname: {{ .Values.service.external_dns }}
+spec:
+{{- if .Values.service.certificate.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.service.external_dns }}
+      secretName: {{ template "bip39.fullname" . }}-tls
+{{- end }}
+
+  rules:
+  - host: {{ .Values.service.external_dns }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ template "bip39.fullname" . }}
+          servicePort: {{ .Values.service.ingress_port }}
+{{- end }}

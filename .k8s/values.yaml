@@ -1,0 +1,33 @@
+fullnameOverride: bip39
+replicaCount: 1
+probe:
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 300m
+
+container:
+  name: bip39
+  pullPolicy: Always
+  repository: registry.mattr.network/matter-labs/bip39
+  tag: latest
+  port: 9000
+  port_name: http
+  healthcheck:
+    enabled: false
+    probe: {}
+
+service:
+  enabled: false
+  external_dns: CHANGEME.mattr.network
+  ingress_port: 9000
+  certificate:
+    enabled: false
+    on_ingress: false
+    issuer: letsencrypt
+    custom:
+      enabled: false
+
+
+
