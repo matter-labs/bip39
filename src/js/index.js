@@ -1147,7 +1147,7 @@
             var option = $("<option>");
             option.attr("value", i);
             option.text(network.name);
-            if (network.name == "BTC - Bitcoin") {
+            if (network.name == "ETH - Ethereum") {
                 option.prop("selected", true);
             }
             DOM.phraseNetwork.append(option);
