@@ -29,6 +29,8 @@ image:build:
   script:
    - docker build -t $CI_JOB_ID:$CI_BUILD_ID --pull .
    - docker tag $CI_JOB_ID:$CI_BUILD_ID $CI_REGISTRY_IMAGE:latest
+   - docker tag $CI_JOB_ID:$CI_BUILD_ID $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+   - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
    - docker push $CI_REGISTRY_IMAGE:latest
 
 production:deploy:
